@@ -1,0 +1,17 @@
+data/
+models/
+*.keras
+*.tflite
+*.h5
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+.venv/
+venv/
+.env
+
+.idea/
+.vscode/
+.DS_Store
