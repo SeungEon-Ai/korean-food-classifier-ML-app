@@ -78,3 +78,17 @@ python predict.py path/to/image.jpg
 Train과 Val accuracy 차이가 작아 과적합 없음.
 
 ### Confusion Matrix
+
+![confusion matrix](docs/confusion_matrix.png)
+
+자주 혼동되는 쌍:
+- 송편 ↔ 꿀떡 (둥근 떡)
+- 곱창구이 ↔ 삼겹살 (양념된 고기)
+- 북엇국 ↔ 계란국 (맑은 국물)
+- 후라이드치킨 ↔ 양념치킨 (양념 유무)
+
+비슷한 음식끼리의 혼동이라 모델 한계가 아니라 데이터 본질적인 어려움.
+
+## 라이선스
+
+AI Hub 데이터는 비상업적 연구용. 학습된 모델 배포 시 라이선스 확인 필요.
