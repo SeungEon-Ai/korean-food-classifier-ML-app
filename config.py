@@ -18,7 +18,7 @@ VAL_RATIO = 0.15
 DROPOUT = 0.3
 
 # 학습
-EPOCHS = 20
+EPOCHS = 25
 LR = 1e-3
 PATIENCE = 5
 
