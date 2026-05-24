@@ -2,6 +2,8 @@
 
 AI Hub 한식 이미지 데이터셋으로 학습한 분류기. MobileNetV2 기반, 모바일 배포(TFLite)용.
 
+137개 한식 음식 분류 가능.
+
 ## 사용법
 
 ```bash
@@ -34,14 +36,12 @@ python train.py
 python evaluate.py
 ```
 
-테스트셋 metrics, classification report, confusion matrix 생성.
-
 ### 4. TFLite 변환
 
 ```bash
-python export.py                  # dynamic (기본, 2~3MB)
-python export.py --quant float16  # float16 (4MB)
-python export.py --quant none     # 비양자화 (8~9MB)
+python export.py                  # dynamic (기본, 2.56MB)
+python export.py --quant float16  # float16 (4.59MB)
+python export.py --quant none     # 비양자화 (9.12MB)
 ```
 
 ### 5. 단일 이미지 예측
@@ -54,40 +54,74 @@ python predict.py path/to/image.jpg
 
 - `config.py` 모든 경로/하이퍼파라미터
 - `data.py` zip 해제, 평탄화, split, tf.data 로더
-- `model.py` 모델 정의
+- `model.py` 모델 정의 (MobileNetV2 + Rescaling)
 - `train.py` 학습 루프
 - `evaluate.py` 평가 + confusion matrix
 - `export.py` TFLite 변환
 - `predict.py` 단일 이미지 추론
 - `notebooks/colab.ipynb` Colab에서 한 번에 돌리는 노트북
 
-## 결과 (32 클래스 기준)
+## 결과 (137 클래스)
 
 | metric | value |
 |---|---|
-| test accuracy | 72.7% |
-| top-3 accuracy | 91.1% |
-| top-5 accuracy | 95.8% |
-| TFLite (dynamic) | 2.43 MB |
+| 클래스 수 | 137 |
+| 학습 이미지 | 약 96,000장 |
+| 검증 이미지 | 약 20,000장 |
+| 테스트 이미지 | 약 21,000장 |
+| Top-1 accuracy | 57.37% |
+| Top-3 accuracy | 77.14% |
+| Top-5 accuracy | 84.00% |
+| 학습 시간 | 9.61시간 (T4 GPU) |
+| TFLite (dynamic) | 2.56 MB |
 
 ### 학습 곡선
 
 ![training curves](docs/training_curves.png)
 
-20 epoch 학습. Early stopping으로 epoch 17에서 best 모델 저장.
-Train과 Val accuracy 차이가 작아 과적합 없음.
+25 epoch 전체 학습 완료. Train과 Val accuracy 곡선이 가까이 따라가 과적합 없음.
 
 ### Confusion Matrix
 
 ![confusion matrix](docs/confusion_matrix.png)
 
-자주 혼동되는 쌍:
-- 송편 ↔ 꿀떡 (둥근 떡)
-- 곱창구이 ↔ 삼겹살 (양념된 고기)
-- 북엇국 ↔ 계란국 (맑은 국물)
-- 후라이드치킨 ↔ 양념치킨 (양념 유무)
+137 클래스의 혼동행렬. 대각선이 진할수록 정답률 높음.
 
-비슷한 음식끼리의 혼동이라 모델 한계가 아니라 데이터 본질적인 어려움.
+### 모델 아키텍처
+
+- Base: MobileNetV2 (ImageNet pretrained, frozen)
+- Input: 224×224×3, [-1, 1] 범위로 정규화 (Rescaling layer)
+- Classification head: GlobalAveragePooling2D → Dropout(0.3) → Dense(137, softmax)
+- 파라미터: 약 2.4M
+
+### 학습 설정
+
+- Optimizer: Adam (lr=1e-3, ReduceLROnPlateau 적용)
+- Loss: Categorical Crossentropy
+- Batch size: 32
+- Augmentation: RandomFlip, RandomRotation(0.15), RandomZoom(0.15), RandomContrast(0.2), RandomBrightness(0.2)
+- Early Stopping: patience=5
+
+### 데이터셋
+
+- 출처: AI Hub - 한국 음식 이미지 데이터셋
+- 24개 카테고리 (구이, 국, 김치, 면, 밥, 찌개, 탕 등)
+- 137개 음식 클래스
+- 클래스당 약 1000장 (총 137,174장)
+
+## 모델 활용 권장
+
+Top-1 정확도가 57%로 단일 답변은 한계가 있지만 Top-3가 77%, Top-5가 84%이므로 후보 제시형 UX 권장:
+
+```
+사용자: 사진 촬영
+   ↓
+앱: "이 중 무엇인가요?"
+  1. 떡볶이 (45%)
+  2. 라볶이 (23%)
+  3. 마라떡볶이 (15%)
+  [직접 입력]
+```
 
 ## 라이선스
 
